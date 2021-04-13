@@ -1,0 +1,203 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+#===============================================================================
+#  CONECTANDOSE A MYSQL Y GENERANDO DATAFRAME
+#===============================================================================
+
+```{r}
+
+library(shiny)
+library(DBI)
+library(RMySQL)
+drv <- dbDriver("MySQL")
+con <- dbConnect(RMySQL::MySQL(),
+                 dbname = "DCMA",
+                 host = "ec2-18-231-104-9.sa-east-1.compute.amazonaws.com",
+                 user = "usuario",
+                 password = "upc2022",
+                 Port = 3306)
+
+
+```
+```{r}
+query01 <-  'select EXP.* , CR.cod_txt,CR.SEXO, CC.departamento
+              from EXPEDIENTE EXP 
+              LEFT JOIN CONCILIADOR CR ON EXP.ID_CONCILIADOR = CR.ID_CONCILIADOR
+              LEFT JOIN CENTRO_CONCILIACION CC ON EXP.ID_CENTROCONCILIACION = CC.ID_CENTROCONCILIACION'
+dfExpedientes  <- dbGetQuery(con,query01)
+dbDisconnect(con)
+```
+```{r}
+query04 <-  'select *
+              from EXPEDIENTE'
+dfExpedientes0  <- dbGetQuery(con,query04)
+#dbDisconnect(con)
+```
+
+```{r}
+query02 <-  'select *
+              from CONCILIADOR '
+dfConciliador  <- dbGetQuery(con,query02)
+```
+```{r}
+query03 <-  'select *
+              from CENTRO_CONCILIACION '
+dfCentro  <- dbGetQuery(con,query03)
+```
+```{r}
+#library("writexl")
+#write_xlsx(dfExpedientes0,"C:/LUCY_ARCHIVOS/2020_MAESTRIA/06_Gestion de Datos/Trabajo Grupal/Experimento_L/DatosOutput/expediente.xlsx")
+
+#write_xlsx(dfConciliador,"C:/LUCY_ARCHIVOS/2020_MAESTRIA/06_Gestion de Datos/Trabajo Grupal/Experimento_L/DatosOutput/dfConciliador.xlsx")
+
+#write_xlsx(dfCentro,"C:/LUCY_ARCHIVOS/2020_MAESTRIA/06_Gestion de Datos/Trabajo Grupal/Experimento_L/DatosOutput/dfCentro.xlsx")
+```
+
+```{r}
+names(dfExpedientes)
+```
+
+```{r}
+columnas<-c(2:13,16:17,18)
+dfExpedientes2<-dfExpedientes[columnas]
+names(dfExpedientes2)
+
+
+```
+
+```{r}
+NombresColumnas <-c("expediente","fechareg","especialid","materia","fechaacta","acta","tipoacta" ,"estadoexp","gptipoacta" ,"conjunta","cntinvolu","procurad","concilia","sexo","dpto"   )
+names(dfExpedientes2) <-NombresColumnas
+names(dfExpedientes2) 
+
+```
+
+#===============================================================================
+#                  ANÁLISIS DE DATOS PERDIDOS
+#===============================================================================
+
+
+```{r}
+head(dfExpedientes2)
+```
+
+```{r}
+summary(dfExpedientes2)
+```
+```{r}
+ndatos <- nrow(dfExpedientes2)
+ndatos
+```
+```{r}
+# Mostrar qué columnas tienen valores perdidos
+cidx_perd <- which(colSums(is.na(dfExpedientes2))!=0)
+cidx_perd
+```
+```{r}
+# Cantidad de valores perdidos en las columnas
+nperdidos <- colSums(is.na(dfExpedientes2[,cidx_perd]))
+nperdidos
+```
+```{r}
+# Porcentaje de valores perdidos en las columnas
+pperdidos <- 100*nperdidos/ndatos
+pperdidos
+
+```
+```{r}
+# Gráfico de agregación: "aggregation plot"
+
+agreg <- aggr(dfExpedientes2, numbers=TRUE)
+agreg
+summary(agreg)
+```
+```{r}
+# Ejemplo de visualización diferente: ordenado según valores faltantes
+aggr(dfExpedientes2, numbers=TRUE, sortComb=TRUE, sortVar=TRUE, only.miss=TRUE)
+
+```
+```{r}
+#===============================================================================
+#  Mecanismo de Datos Perdidos 
+#===============================================================================
+
+# Gráfico de Matriz ("Matrix plot") ... En RStudio previamente usar: x11()
+x11()
+matrixplot(dfExpedientes2)
+```
+
+
+```{r}
+
+matrixplot(dfExpedientes2,sortby="fechaacta")
+matrixplot(dfExpedientes2,sortby="cntinvolu")
+matrixplot(dfExpedientes2,sortby="concilia")
+matrixplot(dfExpedientes2,sortby="sexo")
+
+
+```
+
+
+
+
+```{r}
+# Validando los posibles valores dependientes "fechaacta"
+# Boxplots paralelos ("Parallel boxplots")
+# pos indica que se desea mostrar la variable 
+
+VIM::pbox(dfExpedientes2[5:7], pos=2)    
+VIM::pbox(dfExpedientes2[5:7], pos=3)   
+
+```
+```{r}
+# Validando los posibles valores dependientes "cntinvolu"
+# Boxplots paralelos ("Parallel boxplots")
+# pos indica que se desea mostrar la variable 
+
+VIM::pbox(dfExpedientes2[6:9], pos=1)    
+VIM::pbox(dfExpedientes2[6:9], pos=2) 
+VIM::pbox(dfExpedientes2[6:9], pos=3) 
+VIM::pbox(dfExpedientes2[6:9], pos=4) 
+```
+`
+```{r}
+# Validando los posibles valores dependientes "concilia"
+# Boxplots paralelos ("Parallel boxplots")
+# pos indica que se desea mostrar la variable 
+
+VIM::pbox(dfExpedientes2[6:8,11], pos=1)    
+VIM::pbox(dfExpedientes2[6:8,11], pos=2) 
+VIM::pbox(dfExpedientes2[6:8,11], pos=3) 
+VIM::pbox(dfExpedientes2[6:8,11], pos=4) 
+```
+```{r}
+# Validando los posibles valores dependientes "sexo"
+# Boxplots paralelos ("Parallel boxplots")
+# pos indica que se desea mostrar la variable 
+
+VIM::pbox(dfExpedientes2[6:8,12], pos=1)    
+VIM::pbox(dfExpedientes2[6:8,12], pos=2) 
+VIM::pbox(dfExpedientes2[6:8,12], pos=3) 
+VIM::pbox(dfExpedientes2[6:8,12], pos=4) 
+```
+
+
+
+```{r}
+
+#===============================================================================
+#  Tratamiento de Datos                                           
+#===============================================================================
+
+# No se necesita imputar la data porque los datos perdidos no dependen de datos con valor, por lo cual omitiremos los valores nulos
+
+# Eliminación de casos (solo si es trivial)            
+dfExpedientes3 <- na.omit(dfExpedientes2)
+summary(dfExpedientes3)
+
+```
+
+
+
